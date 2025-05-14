@@ -91,7 +91,9 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
-vim.g.have_nerd_font = false
+vim.g.have_nerd_font = true
+
+vim.cmd.colorscheme 'slate'
 
 -- [[ Setting options ]]
 -- See `:help vim.o`
@@ -102,7 +104,7 @@ vim.g.have_nerd_font = false
 vim.o.number = true
 -- You can also add relative line numbers, to help with jumping.
 --  Experiment for yourself to see if you like it!
--- vim.o.relativenumber = true
+vim.o.relativenumber = true
 
 -- Enable mouse mode, can be useful for resizing splits for example!
 vim.o.mouse = 'a'
@@ -114,9 +116,17 @@ vim.o.showmode = false
 --  Schedule the setting after `UiEnter` because it can increase startup-time.
 --  Remove this option if you want your OS clipboard to remain independent.
 --  See `:help 'clipboard'`
-vim.schedule(function()
-  vim.o.clipboard = 'unnamedplus'
-end)
+--vim.schedule(function()
+--vim.o.clipboard = 'unnamedplus'
+--end)
+
+-- copy into the system clipboard using the leader key
+vim.keymap.set({ 'n', 'v' }, '<leader>y', [["+y]])
+vim.keymap.set({ 'n', 'v' }, '<leader>Y', [["+Y]])
+vim.keymap.set({ 'n', 'v' }, '<leader>d', [["+d]])
+vim.keymap.set({ 'n', 'v' }, '<leader>D', [["+D]])
+vim.keymap.set({ 'n', 'v' }, '<leader>p', [["+p]])
+vim.keymap.set({ 'n', 'v' }, '<leader>P', [["+P]])
 
 -- Enable break indent
 vim.o.breakindent = true
@@ -132,7 +142,7 @@ vim.o.smartcase = true
 vim.o.signcolumn = 'yes'
 
 -- Decrease update time
-vim.o.updatetime = 250
+vim.o.updatetime = 550
 
 -- Decrease mapped sequence wait time
 vim.o.timeoutlen = 300
@@ -351,6 +361,34 @@ require('lazy').setup({
     },
   },
 
+  {
+    'cbochs/grapple.nvim',
+    cmd = 'Grapple',
+    keys = {
+      { '<leader>ha', '<cmd>Grapple toggle<cr>', desc = 'tag a file' },
+      { '<leader>hh', '<cmd>Grapple toggle_tags<cr>', desc = 'toggle tags ui' },
+      { '<leader>hH', '<cmd>Grapple toggle_scopes<cr>', desc = 'toggle tags scopes ui' },
+      { '<c-n>', '<cmd>Grapple cycle forward<cr>', desc = 'Grapple forward' },
+      { '<c-s-n>', '<cmd>Grapple cycle backward<cr>', desc = 'Grapple backward' },
+      { '<leader>1', '<cmd>Grapple select index=1<cr>', desc = 'Grapple 1' },
+      { '<leader>2', '<cmd>Grapple select index=2<cr>', desc = 'Grapple 2' },
+      { '<leader>3', '<cmd>Grapple select index=3<cr>', desc = 'Grapple 3' },
+      { '<leader>4', '<cmd>Grapple select index=4<cr>', desc = 'Grapple 4' },
+      { '<leader>5', '<cmd>Grapple select index=5<cr>', desc = 'Grapple 5' },
+      { '<leader>6', '<cmd>Grapple select index=6<cr>', desc = 'Grapple 6' },
+      { '<leader>7', '<cmd>Grapple select index=7<cr>', desc = 'Grapple 7' },
+      { '<leader>8', '<cmd>Grapple select index=8<cr>', desc = 'Grapple 8' },
+      { '<leader>9', '<cmd>Grapple select index=9<cr>', desc = 'Grapple 9' },
+      { '<leader>0', '<cmd>Grapple select index=0<cr>', desc = 'Grapple 0' },
+    },
+    config = function()
+      require('grapple').statusline()
+      require('grapple').setup {
+        scope = 'git',
+      }
+    end,
+  },
+
   -- NOTE: Plugins can specify dependencies.
   --
   -- The dependencies are proper plugin specifications as well - anything
@@ -429,6 +467,8 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
       vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
       vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
+      vim.keymap.set('n', '<leader>so', builtin.oldfiles, { desc = '[S]earch [O]ld Files' })
+      vim.keymap.set('n', '<leader>sG', builtin.git_files, { desc = '[S]earch [G]it files' })
       vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
       vim.keymap.set('n', '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
       vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
@@ -485,6 +525,7 @@ require('lazy').setup({
       { 'mason-org/mason.nvim', opts = {} },
       'mason-org/mason-lspconfig.nvim',
       'WhoIsSethDaniel/mason-tool-installer.nvim',
+      'nvim-java/nvim-java',
 
       -- Useful status updates for LSP.
       { 'j-hui/fidget.nvim', opts = {} },
@@ -681,7 +722,16 @@ require('lazy').setup({
         --    https://github.com/pmizio/typescript-tools.nvim
         --
         -- But for many setups, the LSP (`ts_ls`) will work just fine
-        -- ts_ls = {},
+        ts_ls = {},
+        html = {},
+        cssls = {},
+        bashls = {},
+        jsonls = {},
+        yamlls = {},
+        marksman = {},
+        svelte = {},
+        powershell_es = {},
+        jdtls = {},
         --
 
         lua_ls = {
@@ -722,6 +772,7 @@ require('lazy').setup({
       require('mason-lspconfig').setup {
         ensure_installed = {}, -- explicitly set to an empty table (Kickstart populates installs via mason-tool-installer)
         automatic_installation = false,
+        automatic_enable = true,
         handlers = {
           function(server_name)
             local server = servers[server_name] or {}
@@ -730,6 +781,10 @@ require('lazy').setup({
             -- certain features of an LSP (for example, turning off formatting for ts_ls)
             server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
             require('lspconfig')[server_name].setup(server)
+          end,
+          jdtls = function()
+            require('java').setup {}
+            require('lspconfig').jdtls.setup {}
           end,
         },
       }
@@ -883,6 +938,7 @@ require('lazy').setup({
     -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
     'folke/tokyonight.nvim',
     priority = 1000, -- Make sure to load this before all the other start plugins.
+    enabled = false,
     config = function()
       ---@diagnostic disable-next-line: missing-fields
       require('tokyonight').setup {
@@ -944,7 +1000,49 @@ require('lazy').setup({
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
+      ensure_installed = {
+        -- defaults
+        'vim',
+        'vimdoc',
+        'lua',
+        'luadoc',
+        'query',
+        'diff',
+
+        -- web dev
+        'html',
+        'css',
+        'javascript',
+        'typescript',
+        'tsx',
+        'svelte',
+        'jsdoc',
+        'http',
+
+        -- git
+        'gitignore',
+        'gitcommit',
+        'gitattributes',
+
+        -- data
+        'json',
+        'yaml',
+        'toml',
+
+        -- other dev
+        'dockerfile',
+        'java',
+        'kotlin',
+        'markdown',
+        'markdown_inline',
+        'rust',
+        'odin',
+        'go',
+        'regex',
+        'cmake',
+        'bash',
+        'comment',
+      },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
@@ -1011,6 +1109,8 @@ require('lazy').setup({
     },
   },
 })
+
+pcall(require, 'aem')
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
