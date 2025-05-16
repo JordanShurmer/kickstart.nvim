@@ -120,19 +120,12 @@ vim.o.showmode = false
 --vim.o.clipboard = 'unnamedplus'
 --end)
 
--- copy into the system clipboard using the leader key
-vim.keymap.set({ 'n', 'v' }, '<leader>y', [["+y]])
-vim.keymap.set({ 'n', 'v' }, '<leader>Y', [["+Y]])
-vim.keymap.set({ 'n', 'v' }, '<leader>d', [["+d]])
-vim.keymap.set({ 'n', 'v' }, '<leader>D', [["+D]])
-vim.keymap.set({ 'n', 'v' }, '<leader>p', [["+p]])
-vim.keymap.set({ 'n', 'v' }, '<leader>P', [["+P]])
-
 -- Enable break indent
 vim.o.breakindent = true
 
 -- Save undo history
 vim.o.undofile = true
+vim.g.undotree_SetFocusWhenToggle = 1
 
 -- Case-insensitive searching UNLESS \C or one or more capital letters in the search term
 vim.o.ignorecase = true
@@ -176,6 +169,10 @@ vim.o.scrolloff = 10
 -- See `:help 'confirm'`
 vim.o.confirm = true
 
+-- custom options diverging from kickstarter
+vim.o.colorcolumn = '90'
+vim.g.netrw_sizestyle = 'H' -- human readable size
+
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
 
@@ -214,6 +211,39 @@ vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper win
 -- vim.keymap.set("n", "<C-S-l>", "<C-w>L", { desc = "Move window to the right" })
 -- vim.keymap.set("n", "<C-S-j>", "<C-w>J", { desc = "Move window to the lower" })
 -- vim.keymap.set("n", "<C-S-k>", "<C-w>K", { desc = "Move window to the upper" })
+
+vim.keymap.set('n', '<leader>bb', [[:! build.sh -b <cr>]], { desc = 'run [b]uild.sh -[b]' })
+vim.keymap.set('n', '<leader>bl', [[:! build.sh -l <cr>]], { desc = 'run [b]uild.sh -[l]' })
+vim.keymap.set('n', '<leader>zb', [[:! ./build.sh <cr>]], { desc = 'run [b]uild.sh' })
+vim.keymap.set('n', '<leader>zd', [[:! ./deploy.sh <cr>]], { desc = 'run [d]eploy.sh' })
+vim.keymap.set('n', '<leader>zi', [[:! sudo ./install.sh <cr>]], { desc = 'run [i]nstall.sh' })
+
+vim.keymap.set('v', 'J', ":m '>+1<CR>gv=gv") --move line down in visual mode
+
+-- Keep the viewport centered when moving up/down/searching
+vim.keymap.set('n', '<C-d>', '<C-d>zz')
+vim.keymap.set('n', '<C-u>', '<C-u>zz')
+vim.keymap.set('n', 'n', 'nzzzv')
+vim.keymap.set('n', 'N', 'Nzzzv')
+vim.keymap.set('n', 'J', 'mzJ`z') -- keep cursor in place when using shift-J
+
+-- copy into the system clipboard using the leader key
+vim.keymap.set({ 'n', 'v' }, '<leader>y', [["+y]])
+vim.keymap.set({ 'n', 'v' }, '<leader>Y', [["+Y]])
+vim.keymap.set({ 'n', 'v' }, '<leader>d', [["+d]])
+vim.keymap.set({ 'n', 'v' }, '<leader>D', [["+D]])
+vim.keymap.set({ 'n', 'v' }, '<leader>p', [["+p]])
+vim.keymap.set({ 'n', 'v' }, '<leader>P', [["+P]])
+
+-- pasting over a word does not yank it
+vim.keymap.set('x', '<leader>p', [["_dP]], { desc = 'replace visual selection without yanking' })
+-- deleting a selected word does not yank it
+vim.keymap.set({ 'n', 'v' }, '<leader>d', [["_d]], { desc = 'replace visual selection without yanking' })
+
+vim.keymap.set('n', '<leader>l', vim.cmd.Lazy, { desc = 'Open [L]azy' })
+
+-- Inspect the tresitter attributes of the thing under the cursor
+vim.keymap.set('n', '<leader>i', vim.cmd.Inspect, { desc = '[I]nspect the treesitter context' })
 
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
@@ -283,6 +313,7 @@ require('lazy').setup({
   -- See `:help gitsigns` to understand what the configuration keys do
   { -- Adds git related signs to the gutter, as well as utilities for managing changes
     'lewis6991/gitsigns.nvim',
+    event = { 'VeryLazy' },
     opts = {
       signs = {
         add = { text = '+' },
@@ -525,7 +556,6 @@ require('lazy').setup({
       { 'mason-org/mason.nvim', opts = {} },
       'mason-org/mason-lspconfig.nvim',
       'WhoIsSethDaniel/mason-tool-installer.nvim',
-      'nvim-java/nvim-java',
 
       -- Useful status updates for LSP.
       { 'j-hui/fidget.nvim', opts = {} },
@@ -997,6 +1027,7 @@ require('lazy').setup({
   { -- Highlight, edit, and navigate code
     'nvim-treesitter/nvim-treesitter',
     build = ':TSUpdate',
+    event = { 'BufReadPre', 'BufNewFile' },
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
@@ -1076,14 +1107,59 @@ require('lazy').setup({
   -- require 'kickstart.plugins.lint',
   -- require 'kickstart.plugins.autopairs',
   -- require 'kickstart.plugins.neo-tree',
-  -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
+  require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
   --
   --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
   -- { import = 'custom.plugins' },
-  --
+
+  { 'nvim-java/nvim-java' },
+  {
+    'frankroeder/parrot.nvim',
+    event = { 'VeryLazy' }, --you can use the VeryLazy event for things that can load later and are not important for the initial UI
+    dependencies = { 'ibhagwan/fzf-lua', 'nvim-lua/plenary.nvim' },
+    -- optionally include "folke/noice.nvim" or "rcarriga/nvim-notify" for beautiful notifications
+    config = function()
+      require('parrot').setup {
+        -- Providers must be explicitly added to make them available.
+        providers = {
+          anthropic = {
+            api_key = os.getenv 'ANTHROPIC_API_KEY',
+          },
+          -- provide an empty list to make provider available (no API key required)
+          -- ollama = {},
+          openai = {
+            api_key = os.getenv 'OPENAI_API_KEY',
+          },
+          github = {
+            api_key = os.getenv 'GITHUB_TOKEN',
+          },
+          xai = {
+            api_key = os.getenv 'XAI_API_KEY',
+          },
+        },
+      }
+    end,
+  },
+
+  -- undotree for good local history navigation.
+  -- note this works across file close due to the opts.undo stuff above
+  {
+    'mbbill/undotree',
+    event = { 'BufReadPre' },
+    keys = {
+      { '<leader>u', vim.cmd.UndotreeToggle, desc = 'Toggle [U]ndoTree' },
+    },
+  },
+
+  -- fugitive for :Git commands
+  {
+    'tpope/vim-fugitive',
+    cmd = { 'Git' },
+  },
+
   -- For additional information with loading, sourcing and examples see `:help lazy.nvim-🔌-plugin-spec`
   -- Or use telescope!
   -- In normal mode type `<space>sh` then write `lazy.nvim-plugin`
