@@ -1121,6 +1121,43 @@ require('lazy').setup({
     event = { 'VeryLazy' }, --you can use the VeryLazy event for things that can load later and are not important for the initial UI
     dependencies = { 'ibhagwan/fzf-lua', 'nvim-lua/plenary.nvim' },
     -- optionally include "folke/noice.nvim" or "rcarriga/nvim-notify" for beautiful notifications
+    keys = {
+      { '<C-g>c', '<cmd>PrtChatNew<cr>', mode = { 'n', 'i' }, desc = 'Prt New [C]hat' },
+      { '<C-g>c', ":<C-u>'<,'>PrtChatNew<cr>", mode = { 'v' }, desc = 'Prt Visual [C]hat New' },
+      { '<C-g>t', '<cmd>PrtChatToggle<cr>', mode = { 'n', 'i' }, desc = 'Prt [T]oggle Popup Chat' },
+      { '<C-g>f', '<cmd>PrtChatFinder<cr>', mode = { 'n', 'i' }, desc = 'Prt Chat [F]inder' },
+      { '<C-g>r', '<cmd>PrtRewrite<cr>', mode = { 'n', 'i' }, desc = 'Prt Inline [R]ewrite' },
+      { '<C-g>r', ":<C-u>'<,'>PrtRewrite<cr>", mode = { 'v' }, desc = 'Prt Visual [R]ewrite' },
+      {
+        '<C-g>j',
+        '<cmd>PrtRetry<cr>',
+        mode = { 'n' },
+        desc = 'Prt Retry rewrite/append/prepend command',
+      },
+      { '<C-g>a', '<cmd>PrtAppend<cr>', mode = { 'n', 'i' }, desc = 'Prt [A]ppend' },
+      { '<C-g>a', ":<C-u>'<,'>PrtAppend<cr>", mode = { 'v' }, desc = 'Prt Visual [A]ppend' },
+      { '<C-g>p', '<cmd>PrtPrepend<cr>', mode = { 'n', 'i' }, desc = 'Prt [P]repend' },
+      { '<C-g>p', ":<C-u>'<,'>PrtPrepend<cr>", mode = { 'v' }, desc = 'Prt Visual [P]repend' },
+      { '<C-g>e', ":<C-u>'<,'>PrtEnew<cr>", mode = { 'v' }, desc = 'Prt Visual [E]new' },
+      { '<C-g>s', '<cmd>PrtStop<cr>', mode = { 'n', 'i', 'v', 'x' }, desc = 'Prt [S]top' },
+      {
+        '<C-g>i',
+        ":<C-u>'<,'>PrtComplete<cr>",
+        mode = { 'n', 'i', 'v', 'x' },
+        desc = 'Prt [I]mplement/Complete Visual Selection',
+      },
+      {
+        '<C-g>I',
+        ":<C-u>'<,'>PrtCompleteFullContext<cr>",
+        mode = { 'n', 'i', 'v', 'x' },
+        desc = 'Prt [I]mplement/Complete Visual Selection',
+      },
+      { '<C-g>x', '<cmd>PrtContext<cr>', mode = { 'n' }, desc = 'Prt Open conte[x]t file' },
+      { '<C-g>m', '<cmd>PrtModel<cr>', mode = { 'n' }, desc = 'Prt Select [M]odel' },
+      { '<C-g>p', '<cmd>PrtProvider<cr>', mode = { 'n' }, desc = 'Prt Select [P]rovider' },
+      { '<C-g>q', '<cmd>PrtAsk<cr>', mode = { 'n' }, desc = 'Prt Ask a [Q]uestion' },
+      { '<C-g>C', '<cmd>PrtCommit<cr>', mode = { 'n' }, desc = 'Prt Give a [C]ommit Message' },
+    },
     config = function()
       require('parrot').setup {
         -- Providers must be explicitly added to make them available.
@@ -1139,6 +1176,62 @@ require('lazy').setup({
           xai = {
             api_key = os.getenv 'XAI_API_KEY',
           },
+        },
+        hooks = {
+          Complete = function(prt, params)
+            local template = [[
+                I have the following code from {{filename}}:
+
+                ```{{filetype}}
+                {{selection}}
+                ```
+
+                Please finish the code above carefully and logically.
+                Respond just with the snippet of code that should be inserted."
+            ]]
+            local model_obj = prt.get_model 'command'
+            prt.Prompt(params, prt.ui.Target.append, model_obj, nil, template)
+          end,
+          CompleteFullContext = function(prt, params)
+            local template = [[
+                I have the following code from {{filename}}:
+
+                ```{{filetype}}
+                {{filecontent}}
+                ```
+
+                Please look at the following section specifically:
+                ```{{filetype}}
+                {{selection}}
+                ```
+
+                Please finish the code above carefully and logically.
+                Respond just with the snippet of code that should be inserted.
+            ]]
+            local model_obj = prt.get_model 'command'
+            prt.Prompt(params, prt.ui.Target.append, model_obj, nil, template)
+          end,
+          CommitMsg = function(prt, params)
+            local futils = require 'parrot.file_utils'
+            if futils.find_git_root() == '' then
+              prt.logger.warning 'Not in a git repository'
+              return
+            else
+              local template = [[
+                  I want you to act as a commit message generator. I will provide you
+                  with information about the task and the prefix for the task code, and
+                  I would like you to generate an appropriate commit message using the
+                  conventional commit format. Do not write any explanations or other
+                  words, just reply with the commit message.
+                  Start with a short headline as summary but then list the individual
+                  changes in more detail.
+
+                  Here are the changes that should be considered by this message:
+                  ]] .. vim.fn.system 'git diff --no-color --no-ext-diff --staged'
+              local model_obj = prt.get_model 'command'
+              prt.Prompt(params, prt.ui.Target.append, model_obj, nil, template)
+            end
+          end,
         },
       }
     end,
